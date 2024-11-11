@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI-Powered Forecasting & Simulation</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <!-- Mapbox GL JS -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css" rel="stylesheet" />
+    <!-- Custom Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Poppins:400,500,600&display=swap" rel="stylesheet">
+    <style>
+/* General Styling */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+}
+#map {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+}
+
+/* Sidebar styling */
+#sidebar {
+    position: absolute;
+    width: 300px;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #3c5c7e, #1d2c43);
+    padding: 20px;
+    z-index: 1;
+    overflow: hidden; /* Hide overflow to remove scrollbar */
+    scrollbar-width: none; /* For Firefox */
+    -ms-overflow-style: none; /* For IE and Edge */
+    border-radius: 15px; /* Curved edges */
+    box-shadow: -2px 0 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Hide scrollbar for Chrome, Safari, and Opera */
+#sidebar::-webkit-scrollbar {
+    display: none;
+}
+
+#sidebar h2, #sidebar h3, #sidebar p {
+    color: #ffffff;
+}
+
+#sidebar h2 {
+    margin: 0;
+    padding: 0;
+    font-size: 22px;
+}
+
+#sidebar h3 {
+    font-size: 18px;
+    cursor: pointer;
+    white-space: nowrap; /* Prevent wrapping */
+}
+
+#sidebar p {
+    font-size: 14px;
+    margin: 5px 0;
+}
+
+/* Alert Details Styling */
+#alert-details h3 {
+    margin-top: 20px;
+    color: #fff;
+    font-size: 18px; /* Reduced font size */
+    letter-spacing: 1px;
+    white-space: nowrap; /* Prevent wrapping */
+}
+
+.alert-info {
+    margin-bottom: 10px; /* Reduced from 20px */
+    padding: 5px;        /* Reduced from 10px */
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2); /* Reduced shadow */
+    border-radius: 8px;
+    transition: background 0.3s ease;
+}
+
+.alert-info:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.2));
+}
+
+.alert-info label {
+    font-weight: bold;
+    font-size: 14px; /* Reduced from 16px */
+    color: #c1c8e4;
+}
+
+.alert-info p, .alert-info span {
+    margin-left: 5px;
+    color: #ffd700;
+    margin: 0;
+    font-size: 14px; /* Consistent font size */
+}
+
+.alert-severity {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 4px;
+    background-color: #ff6b6b;
+    color: #fff;
+    font-weight: bold;
+    box-shadow: 0 0 5px rgba(255, 100, 100, 0.6);
+}
+
+/* Action buttons box styling */
+#action-box {
+    display: none;
+    position: absolute;
+    top: 100px;
+    right: 20px;
+    width: 220px;
+    background: linear-gradient(135deg, #3c5c7e, #1d2c43);
+    padding: 15px;
+    border-radius: 15px; /* Curved edges */
+    box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.4);
+    z-index: 9999;
+}
+
+#action-box h3 {
+    color: #ffffff;
+    font-size: 16px;
+}
+
+.action-button {
+    margin-top: 10px;
+    padding: 8px;
+    background-color: #1e90ff;
+    color: white;
+    border: none;
+    border-radius: 4px; /* Curved edges */
+    cursor: pointer;
+    width: 100%;
+    transition: background-color 0.3s ease;
+}
+
+.action-button:hover {
+    background-color: #182848;
+}
+
+/* Forecasting section */
+.forecast-section {
+    margin-top: 15px;
+}
+
+.forecast-button {
+    margin-top: 10px;
+    padding: 8px;
+    background-color: #4b6cb7;
+    color: white;
+    border: none;
+    border-radius: 4px; /* Curved edges */
+    cursor: pointer;
+    width: 100%;
+    transition: background-color 0.3s ease;
+}
+
+.forecast-button:hover {
+    background-color: #182848;
+}
+
+#slider {
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* Re-Center button styling */
+.recenter-button {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    background-color: #4b6cb7;
+    color: white;
+    border: none;
+    border-radius: 5px; /* Curved edges */
+    cursor: pointer;
+    z-index: 10;
+    font-size: 14px;
+}
+
+.recenter-button:hover {
+    background-color: #182848;
+}
+
+/* Legend styling */
+#legend {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background-color: white;
+    padding: 10px;
+    border-radius: 4px; /* Curved edges */
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+}
+
+#legend div {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+#legend div span {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    margin-right: 5px;
+}
+
+/* Modal styling */
+#analyticsModal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px; /* Curved edges */
+    width: 80%;
+    max-width: 800px;
+    height: 80%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.close-button {
+    align-self: flex-end;
+    background-color: #ff5c5c;
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px; /* Curved edges */
+    transition: background 0.3s ease;
+}
+
+.close-button:hover {
+    background-color: #ff2b2b;
+}
+
+/* CCTV Video Popup styling */
+.video-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    max-width: 80%;
+    background-color: white;
+    border: 2px solid #ccc;
+    border-radius: 8px; /* Curved edges */
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+}
+
+.video-popup video {
+    width: 100%;
+    height: auto;
+}
+
+.video-popup .close-button {
+    align-self: flex-end;
+    background-color: #ff5c5c;
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px; /* Curved edges */
+    transition: background 0.3s ease;
+    margin: 5px;
+}
+
+.video-popup .close-button:hover {
+    background-color: #ff2b2b;
+}
+
+/* Overlay for video popup */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    display: none;
+}
+
+/* Pulsing Dot Styles */
+.mapboxgl-popup-content {
+    text-align: center;
+    font-family: 'Poppins', sans-serif;
+}
+
+.mapboxgl-popup-content strong {
+    font-size: 12px;
+    color: #333;
+}
+
+</style>
+
+</head>
+<body>
+
+<!-- Sidebar for the alerts -->
+<div id="sidebar">
+    <h2>AI-powered Forecasting & Simulation</h2>
+    <p>Click on an alert</p>
+
+    <!-- Alert details section -->
+    <div id="alert-details">
+        <h3>Alert Details</h3>
+        <p>Select an alert to see details.</p>
+    </div>
+</div>
+
+<!-- Action box for buttons and slider -->
+<div id="action-box">
+    <h3>Actions</h3>
+    <button class="action-button" id="viewAnalyticsButton">View Analytics</button>
+    <button class="action-button" onclick="callAgent()">CCTV</button>
+
+    <div class="forecast-section">
+        <h3>Forecasting</h3>
+        <input id="slider" type="range" min="0" max="6" step="1" value="0">
+        <button class="forecast-button" id="playPause">Forecast</button>
+    </div>
+</div>
+
+<div id="map"></div>
+
+<!-- Re-Center Button -->
+<button class="recenter-button" id="recenterButton">Re-Center</button>
+
+<!-- Legend for flood levels -->
+<div id="legend">
+    <div><span style="background-color: #eef91a;"></span>Low Inundation</div>
+    <div><span style="background-color: #d36d64;"></span>Medium Inundation</div>
+    <div><span style="background-color: #b9467a;"></span>High Inundation</div>
+    <div><span style="background-color: #67009e;"></span>Critical Inundation</div>
+</div>
+
+<!-- CCTV Video Popup -->
+<div class="overlay" id="overlay"></div>
+<div class="video-popup" id="video-popup">
+    <button class="close-button" onclick="closeVideoPopup()">Close</button>
+    <video id="video-element" autoplay loop muted>
+        <source id="video-source" src="" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
+
+<!-- Modal structure for View Analytics -->
+<div id="analyticsModal">
+    <div class="modal-content">
+        <button class="close-button" onclick="closeAnalyticsModal()">Close</button>
+        <!-- The iframe will be dynamically added here -->
+    </div>
+</div>
+
+<script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoicmFlZGR3ZWlrIiwiYSI6ImNtMTZqZGtpeTBta2cydnM4NjBkenhsMG8ifQ.r3ufHWJMoGh_DCH3XDhDAg'; // Replace with your Mapbox access token
+
+    const initialCenter = [51.51664561340354, 25.335942811427245];
+    const initialZoom = 10.991296239349339;
+
+    const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/raeddweik/cm1eudgu102ju01pb8tmdb81t', // Replace with your Mapbox style
+        center: initialCenter,
+        zoom: initialZoom,
+        pitch: 0,
+        bearing: 0
+    });
+
+    // Re-Center Button functionality
+    document.getElementById('recenterButton').addEventListener('click', function () {
+        map.flyTo({
+            center: initialCenter,
+            zoom: initialZoom,
+            pitch: 0,
+            bearing: 0,
+            speed: 2
+        });
+        resetAlertDetails();
+    });
+
+    // Alert data
+    const alertData = [
+        {
+            title: "Critical Inundation Alert",
+            location: "Jasim Bin Hamad St, Qatar",
+            time: "2024-10-01 12:00 PM",
+            severity: "Critical",
+            description: "Inundation level above critical threshold. Near multiple residential buildings.",
+            recommendation: "Deploy drainage pumps to affected areas and issue alerts for residents in high-risk zones.",
+            videoURL: "https://raedaldweik.github.io/flood-heatmap-data/cctv1.mp4",
+            analyticsURL: "https://raedaldweik.github.io/business/"
+        },
+        {
+            title: "Critical Inundation Alert",
+            location: "Ali Bin Amur Al Attiya St, Qatar",
+            time: "2024-10-01 11:00 AM",
+            severity: "Critical",
+            description: "Inundation level above critical threshold. Within close proximity to multiple residential buildings and surgery center.",
+            recommendation: "Deploy drainage pumps to affected areas and issue alerts for residents in high-risk zones.",
+            videoURL: "https://raedaldweik.github.io/flood-heatmap-data/cctv2.mp4",
+            analyticsURL: "https://raedaldweik.github.io/Jumeirah-Beach-Rd/"
+        },
+        {
+            title: "Critical Inundation Alert",
+            location: "Lusail, Qatar",
+            time: "2024-10-01 9:00 AM",
+            severity: "Critical",
+            description: "Inundation level above critical threshold.",
+            recommendation: "Deploy drainage pumps to affected areas and issue alerts for residents in high-risk zones.",
+            videoURL: "https://raedaldweik.github.io/flood-heatmap-data/cctv3.mp4",
+            analyticsURL: "https://raedaldweik.github.io/Al-Mina-St/"
+        }
+    ];
+
+    // Function to update alert details
+    function updateAlertDetails(alert) {
+        const alertDetailsDiv = document.getElementById('alert-details');
+        alertDetailsDiv.innerHTML = `
+            <h3>${alert.title}</h3>
+            <div class="alert-info">
+                <label>Location:</label>
+                <p>${alert.location}</p>
+            </div>
+            <div class="alert-info">
+                <label>Time and Date:</label>
+                <p>${alert.time}</p>
+            </div>
+            <div class="alert-info">
+                <label>Flood Severity:</label>
+                <span class="alert-severity">${alert.severity}</span>
+            </div>
+            <div class="alert-info">
+                <label>Detailed Description:</label>
+                <p>${alert.description}</p>
+            </div>
+            <div class="alert-info">
+                <label>Recommendation:</label>
+                <p>${alert.recommendation}</p>
+            </div>
+        `;
+    }
+
+    // Function to reset alert details
+    function resetAlertDetails() {
+        const alertDetailsDiv = document.getElementById('alert-details');
+        alertDetailsDiv.innerHTML = `
+            <h3>Alert Details</h3>
+            <p>Select an alert to see details.</p>
+        `;
+        document.getElementById('action-box').style.display = 'none'; // Hide the action box
+    }
+
+    // Function to open the analytics modal
+    function openAnalyticsModal(url) {
+        const iframe = document.createElement('iframe');
+        iframe.src = url;
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+
+        const modalContent = document.querySelector('#analyticsModal .modal-content');
+        modalContent.innerHTML = `
+            <button class="close-button" onclick="closeAnalyticsModal()">Close</button>
+        `;
+        modalContent.appendChild(iframe);
+
+        document.getElementById('analyticsModal').style.display = 'flex';
+    }
+
+    function closeAnalyticsModal() {
+        document.getElementById('analyticsModal').style.display = 'none';
+    }
+
+    // CCTV Video Popup functions
+    function openVideoPopup(videoURL) {
+        const overlay = document.getElementById('overlay');
+        const popup = document.getElementById('video-popup');
+        const videoElement = document.getElementById('video-element');
+        const videoSource = document.getElementById('video-source');
+
+        videoSource.src = videoURL;
+        videoElement.load();
+        overlay.style.display = 'block';
+        popup.style.display = 'flex';
+    }
+
+    function closeVideoPopup() {
+        const overlay = document.getElementById('overlay');
+        const popup = document.getElementById('video-popup');
+        const videoElement = document.getElementById('video-element');
+
+        videoElement.pause();
+        overlay.style.display = 'none';
+        popup.style.display = 'none';
+    }
+
+    // Function to handle "CCTV" button click
+    function callAgent() {
+        openVideoPopup(selectedAlert.videoURL);
+    }
+
+    // Function to handle alert clicks
+    let selectedAlert = null;
+    function handleAlertClick(index, coordinates, flyToOptions) {
+        selectedAlert = alertData[index];
+        map.flyTo(flyToOptions);
+        updateAlertDetails(selectedAlert);
+        document.getElementById('action-box').style.display = 'block'; // Show the action box on alert click
+
+        // Set the onclick handler for the "View Analytics" button
+        document.getElementById('viewAnalyticsButton').onclick = function() {
+            openAnalyticsModal(selectedAlert.analyticsURL);
+        };
+    }
+
+   const geojson = {
+    "type": "FeatureCollection",
+    "features": [
+        // First road
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [51.52438245090676, 25.39252535645592],
+                    [51.524541198259584, 25.392098727556714],
+                    [51.524686035241956, 25.391669778272046],
+                    [51.52485694797434, 25.391242411856126],
+                    [51.52499956420294, 25.390804478201844],
+                    [51.5251392419041, 25.390377151148158],
+                    [51.52530256852501, 25.389959218530564],
+                    [51.525458154089534, 25.3895305657837],
+                    [51.52562578999721, 25.389105256267385],
+                    [51.52577168177635, 25.388680190243775],
+                    [51.52593059339503, 25.388245833319147],
+                    [51.52607750879642, 25.387817665404683],
+                    [51.526232071470815, 25.38739246014491]
+                ]
+            }
+        },
+        // Second road
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [51.524525513198455, 25.39256835657376],
+                    [51.52467635991533, 25.39214271681061],
+                    [51.52481567198552, 25.391761957153037],
+                    [51.52499734553075, 25.39123796320952],
+                    [51.52514736506174, 25.390858536818072],
+                    [51.52531098310416, 25.390433535331553],
+                    [51.52546927912067, 25.390002146394124],
+                    [51.52561208412271, 25.38957570842598],
+                    [51.52577136473519, 25.389151873369045],
+                    [51.525944700209834, 25.38873047540328],
+                    [51.52610396989192, 25.388302448678047],
+                    [51.52625544227931, 25.387881469378485],
+                    [51.526410109921045, 25.387457720474742]
+                ]
+            }
+        },
+        // Third road
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [51.48395412271617, 25.32848335900583],
+                    [51.48371878110379, 25.328893658056515],
+                    [51.483498463048534, 25.32930547796228],
+                    [51.48331737709256, 25.32970832659207],
+                    [51.48312101280197, 25.33012392562884],
+                    [51.48294897625007, 25.330548732162796],
+                    [51.48275673749248, 25.330975582601226],
+                    [51.4826055351713, 25.3313759251688],
+                    [51.48246790825692, 25.331817784329687],
+                    [51.482375374412584, 25.332252138769945],
+                    [51.48228775153362, 25.33268912445638],
+                    [51.482277543065464, 25.333140582374597],
+                    [51.48222268734983, 25.33359211079636]
+                ]
+            }
+        },
+        // Fourth road
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [51.48374378993063, 25.32843666439409],
+                    [51.48352889491932, 25.328844826024024],
+                    [51.483346423770286, 25.329256151375404],
+                    [51.48315288306918, 25.329661186684646],
+                    [51.482950742095625, 25.330085950382525],
+                    [51.48274414644496, 25.330491806943755],
+                    [51.4825618586606, 25.330904050043543],
+                    [51.482385342477386, 25.33133480389455],
+                    [51.482266839869055, 25.331758726945935],
+                    [51.48214185918317, 25.332210800245633],
+                    [51.48204579032736, 25.33264281987806],
+                    [51.48200857075594, 25.33309948637556],
+                    [51.48198171244252, 25.333550931122744]
+                ]
+            }
+        },
+        // Fifth road
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [51.544417802276996, 25.283122503868213],
+                    [51.54437307836059, 25.28357159253484],
+                    [51.54433988706856, 25.28402597086209],
+                    [51.54430021977538, 25.284473144113434],
+                    [51.54428119011976, 25.28491571124617],
+                    [51.54423342334704, 25.285358608655088],
+                    [51.54419716160734, 25.285807558135957],
+                    [51.54415758374125, 25.286263286974332],
+                    [51.54413575093352, 25.28671240318539],
+                    [51.54413398299124, 25.287160952515393],
+                    [51.544164695873974, 25.287607415164047],
+                    [51.544181917565965, 25.288057562472886],
+                    [51.544194830774416, 25.28850832198654]
+                ]
+            }
+        },
+        // Sixth road
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [51.54427224077503, 25.28311843310931],
+                    [51.544225015435586, 25.283566003246463],
+                    [51.544213674950925, 25.28402723976876],
+                    [51.54416488059002, 25.284470306526714],
+                    [51.54411777294743, 25.28491426926766],
+                    [51.54407719648222, 25.28535433393634],
+                    [51.54403827620803, 25.285823673983685],
+                    [51.544012148482494, 25.286252174914424],
+                    [51.54398417351953, 25.28670033542214],
+                    [51.543992856506776, 25.287154625423355],
+                    [51.544023045209514, 25.287619996253895],
+                    [51.54403934369196, 25.28805626805331],
+                    [51.54404007916469, 25.288500389582452]
+                ]
+            }
+        }
+    ]
+};
+
+
+
+    // Flood Levels
+    const floodLevels = [
+        [0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0],  // Time 0
+        [0, 0, 0, 1, 3, 1, 0, 0, 0, 0, 0, 0],  // Time 1
+        [0, 0, 1, 2, 3, 2, 1, 0, 0, 0, 0, 0],  // Time 2
+        [0, 1, 2, 2, 3, 2, 2, 1, 0, 0, 0, 0],  // Time 3
+        [0, 1, 2, 3, 3, 3, 2, 2, 1, 0, 0, 0],  // Time 4
+        [0, 2, 2, 3, 3, 3, 3, 2, 2, 1, 0, 0],  // Time 5
+        [0, 2, 3, 3, 3, 3, 3, 3, 2, 2, 1, 0],  // Time 6
+        // Add more time steps if needed
+    ];
+
+    const colors = ['#eef91a', '#d36d64', '#b9467a', '#67009e'];
+
+    function updateLineGradient(time) {
+        geojson.features.forEach((feature, index) => {
+            const coordinates = feature.geometry.coordinates;
+            const gradient = floodLevels[time].map(level => colors[level]);
+            const step = 1 / (coordinates.length - 1);
+
+            const lineGradient = ['interpolate', ['linear'], ['line-progress']];
+            for (let i = 0; i < gradient.length; i++) {
+                lineGradient.push(i * step, gradient[i]);
+            }
+
+            map.setPaintProperty(`line-${index}`, 'line-gradient', lineGradient);
+        });
+    }
+
+
+    map.on('load', () => {
+        // Add road layers with line gradients
+        geojson.features.forEach((feature, index) => {
+            map.addSource(`line-${index}`, {
+                type: 'geojson',
+                lineMetrics: true,
+                data: feature
+            });
+
+            map.addLayer({
+                type: 'line',
+                source: `line-${index}`,
+                id: `line-${index}`,
+                paint: {
+                    'line-color': '#00435e',
+                    'line-width': 14,
+                    'line-gradient': ['interpolate', ['linear'], ['line-progress'], 0, '#00435e', 1, '#00435e']
+                },
+                layout: {
+                    'line-cap': 'round',
+                    'line-join': 'round'
+                }
+            });
+        });
+
+        updateLineGradient(0);
+
+        let isPlaying = false;
+        let playInterval;
+
+        function startAnimation() {
+            isPlaying = true;
+            document.getElementById('playPause').textContent = 'Pause';
+            playInterval = setInterval(() => {
+                const slider = document.getElementById('slider');
+                let currentValue = parseInt(slider.value, 10);
+                if (currentValue < floodLevels.length - 1) {
+                    slider.value = currentValue + 1;
+                } else {
+                    slider.value = 0;
+                }
+                updateLineGradient(parseInt(slider.value, 10));
+            }, 1000);
+        }
+
+        function stopAnimation() {
+            isPlaying = false;
+            document.getElementById('playPause').textContent = 'Forecast';
+            clearInterval(playInterval);
+        }
+
+        document.getElementById('playPause').addEventListener('click', () => {
+            if (isPlaying) {
+                stopAnimation();
+            } else {
+                startAnimation();
+            }
+        });
+
+        document.getElementById('slider').addEventListener('input', (e) => {
+            const time = parseInt(e.target.value, 10);
+            updateLineGradient(time);
+        });
+
+        // Pulsing dot coordinates
+        const pulsingDotCoordinates = [51.483436185156904, 25.33026922946226];
+        const pulsingDotCoordinates2 = [51.544747232377006, 25.28538735702432];
+        const pulsingDotCoordinates3 = [51.525350237708665, 25.391756391249515];
+
+        const size = 200;
+        const pulsingDot = {
+            width: size,
+            height: size,
+            data: new Uint8Array(size * size * 4),
+
+            onAdd: function () {
+                const canvas = document.createElement('canvas');
+                canvas.width = this.width;
+                canvas.height = this.height;
+                this.context = canvas.getContext('2d');
+            },
+
+            render: function () {
+                const duration = 1000;
+                const t = (performance.now() % duration) / duration;
+                const radius = (size / 2) * 0.3;
+                const outerRadius = (size / 2) * 0.7 * t + radius;
+                const context = this.context;
+
+                context.clearRect(0, 0, this.width, this.height);
+                context.beginPath();
+                context.arc(this.width / 2, this.height / 2, outerRadius, 0, Math.PI * 2);
+                context.fillStyle = `rgba(255, 200, 200, ${1 - t})`;
+                context.fill();
+
+                context.beginPath();
+                context.arc(this.width / 2, this.height / 2, radius, 0, Math.PI * 2);
+                context.fillStyle = 'rgba(255, 100, 100, 1)';
+                context.strokeStyle = 'white';
+                context.lineWidth = 2 + 4 * (1 - t);
+                context.fill();
+                context.stroke();
+
+                this.data = context.getImageData(0, 0, this.width, this.height).data;
+                map.triggerRepaint();
+
+                return true;
+            }
+        };
+
+        map.addImage('pulsing-dot', pulsingDot, { pixelRatio: 2 });
+
+        // Function to add pulsing dot layers
+        function addPulsingDotLayer(id, coordinates, description) {
+            map.addSource(`dot-point-${id}`, {
+                'type': 'geojson',
+                'data': {
+                    'type': 'FeatureCollection',
+                    'features': [{
+                        'type': 'Feature',
+                        'properties': { 'description': description },
+                        'geometry': { 'type': 'Point', 'coordinates': coordinates }
+                    }]
+                }
+            });
+
+            map.addLayer({
+                'id': `layer-with-pulsing-dot-${id}`,
+                'type': 'symbol',
+                'source': `dot-point-${id}`,
+                'layout': { 'icon-image': 'pulsing-dot' },
+                'minzoom': 10,
+                'maxzoom': 16 // Dots disappear when zoomed in beyond zoom level 16
+            });
+
+            const popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false });
+
+            map.on('mouseenter', `layer-with-pulsing-dot-${id}`, (e) => {
+                map.getCanvas().style.cursor = 'pointer';
+                const coordinates = e.features[0].geometry.coordinates.slice();
+                const description = e.features[0].properties.description;
+                popup.setLngLat(coordinates).setHTML(description).addTo(map);
+            });
+
+            map.on('mouseleave', `layer-with-pulsing-dot-${id}`, () => {
+                map.getCanvas().style.cursor = '';
+                popup.remove();
+            });
+        }
+
+        // Add pulsing dots
+        addPulsingDotLayer(1, pulsingDotCoordinates, '<strong>Alert: Inundation Indicator</strong>');
+        addPulsingDotLayer(2, pulsingDotCoordinates2, '<strong>Alert: Inundation Indicator</strong>');
+        addPulsingDotLayer(3, pulsingDotCoordinates3, '<strong>Alert: Inundation Indicator</strong>');
+
+        // Event listeners for pulsing dots
+        map.on('click', 'layer-with-pulsing-dot-1', () => {
+            handleAlertClick(0, pulsingDotCoordinates, {
+                center: pulsingDotCoordinates,
+                zoom: 16.44,
+                bearing: -16.8,
+                pitch: 64.45,
+                speed: 2,
+                curve: 1
+            });
+        });
+
+        map.on('click', 'layer-with-pulsing-dot-2', () => {
+            handleAlertClick(1, pulsingDotCoordinates2, {
+                center: pulsingDotCoordinates2,
+                zoom: 16.67,
+                bearing: 17.41,
+                pitch: 65.99,
+                speed: 2,
+                curve: 1
+            });
+        });
+
+        map.on('click', 'layer-with-pulsing-dot-3', () => {
+            handleAlertClick(2, pulsingDotCoordinates3, {
+                center: pulsingDotCoordinates3,
+                zoom: 16.48,
+                bearing: 146.4,
+                pitch: 60.23,
+                speed: 2,
+                curve: 1
+            });
+        });
+
+    });
+
+</script>
+
+</body>
+</html>
